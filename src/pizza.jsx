@@ -30,7 +30,7 @@ return (
                     />
             </label>
             <label>
-                <select name='size' onChange={onInputChange}>
+                <select data-cy="size" name='size' onChange={onInputChange}>
                     <option  value='' select>--Pick a Size</option>
                     <option  value='medium'>Medium</option>
                     <option  value='large'>Large</option>
