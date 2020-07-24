@@ -1,114 +1,113 @@
-import React, { useState, useEffect } from "react";
-import { Link, Route, Switch } from 'react-router-dom';
-import Pizza from './pizza.jsx';
-import FormSchema from './formSchema.js'
+import React, {useState, useEffect} from 'react';
+import {Link, Switch, Route} from 'react-router-dom';
+import NewOrder from './completedOrder.jsx';
+import Pizza from './Pizza.jsx'
+import axios from 'axios';
 import * as yup from 'yup';
-import Axios from "axios";
+import FormSchema from './formSchema.js';
 
 const initialOrder = {
-  name: '',
-  size: '',
-  toppings: {
-    pepperoni: false,
-    mushrooms: false,
-    onions: false,
-    olives: false
-  },
-  specialInstructions: ''
+    name:'',
+    size:'',
+    toppings: {
+        pepperoni: false,
+        mushrooms: false,
+        onions: false,
+        olives: false,
+    },
+    specialIntructions: '',
 }
-const initialError = {
-  name: '',
-  size: '',
-  toppings: {
-    pepperoni: false,
-    mushrooms: false,
-    onions: false,
-    olives: false
-  },
-  specialInstructions: ''
+const initialErrors = {
+    name:'',
 }
-const App = () => {
-  
+const initialNewOrder = []
+const initialDisabled = true
 
-  // const [form, setForm] = useState(initialForm)
-  const [disabled, setDisabled] = useState(false)
-  const [error, setError] = useState()
+export default function App() {
+  const [newOrders, setNewOrders]  = useState(initialNewOrder)
   const [order, setOrder] = useState(initialOrder)
+  const [errors, setErrors] = useState(initialErrors)
+  const [disabled, setDisabled] = useState(initialDisabled)
 
-  useEffect(() => {
-    FormSchema.isValid(order).then(valid => {
-      setDisabled(!valid)
-    })
-  }, [order])
-
-  const handleChange = e => {
-    if (e.target.type === 'checkbox') {
-      setOrder({ ...order, toppings: { ...order.toppings, [e.target.name]: !order.toppings[e.target.name] } })
-      validateCheckbox(e.target.name, e.target.value)
-    } else {
-      setOrder({ [e.target.name]: e.target.value })
-      validateForm(e.target.name, e.target.value)
-    }
-  }
-
-  const validateForm = (name, value) => {
-    yup.reach(FormSchema, name)
-      .validate(value)
-      .then(valid => {
-        setError({ [name]: '' })
-      })
-      .catch(err => {
-        setError({ [name]: err.error })
-      })
-  }
-
-  const validateCheckbox = (name, value) => {
-    yup.reach(FormSchema, `toppings.${name}`)
-      .validate(value)
-      .then(valid => {
-        setError({ ...error, toppings: '', })
-      })
-      .catch(err => {
-        setError({ ...error, toppings: err.error })
-      })
-  }
-
-  const handleSubmit = e => {
-    e.preventDefault();
-    Axios.post('https://reqres.in/api/users', order)
+  const postcompletedOrder = completedOrder => {
+      axios.post('https://reqres.in/api/users/', completedOrder)
       .then(response => {
-        setOrder([...order, response.data])
+          setNewOrders([response.data, ...newOrders])
+          setOrder(initialOrder)
       })
       .catch(err => {
-        console.log(err)
+          console.log('error:', err)
       })
   }
-
-  return (
-    <>
-      <h1>Lambda Eats</h1>
-      <button>
-        <Link to='/'>Home</Link>
-      </button>
-      <button>
-        <Link to='/pizza'>Create Your Pizza</Link>
-      </button>
-      <Switch>
-
- 
-
-        <Route path='/pizza'>
+  const inputChange = (name, value) => {
+      yup
+      .reach(FormSchema, name)
+      .validate(value)
+      .then(valid => {
+          setErrors({
+              ...errors, [name]: '',
+          })
+      })
+      .catch(error => {
+          setErrors({
+              ...errors, [name]: error.errors[0],
+          })
+      })
+      setOrder({...order, [name]: value})
+  }
+  const checkChange = (name, isChecked) => {
+      setOrder({
+          ...order, toppings: {
+              ...order.toppings, [name]: isChecked,
+          }
+      })
+  }
+  const submit = () => {
+      const completedOrder = {
+          name: order.name.trim(),
+          toppings: Object.keys(order.toppings).filter(hb => order.toppings[hb]),
+      }
+      postcompletedOrder(completedOrder)
+  }
+  console.log(newOrders)
+  useEffect(() => {
+      FormSchema.isValid(order).then(valid => {
+          setDisabled(!valid)
+      }, [order])
+    })
+      return (
+          <div className='App'>
+          <header>
+             <h1>Lambda Eats</h1>
+          </header>
+          <button>
+         <Link to='/'>Home</Link>
+       </button>
+       <button>
+         <Link to='/pizza'>Create Your Pizza</Link>
+       </button>
+       <Switch>
+        <Route exact path='/pizza'>
           <Pizza
-             order={order}
-            disabled={disabled}
-            submit={handleSubmit}
-            handleChange={handleChange}
-             errors={error} 
-            />
+          order={order}
+          inputChange={inputChange}
+          checkChange={checkChange}
+          submit={submit}
+          disabled={disabled}
+          errors={errors}
+          />
+          {
+              newOrders.map(newOrder => {
+                  return (
+                      <NewOrder
+                      key={newOrder.id}
+                      order={newOrder}
+                      />
+                  )
+              })
+          }
         </Route>
-
-      </Switch>
-    </>
-  );
-};
-export default App;
+        </Switch> 
+        </div> 
+      ); 
+  }

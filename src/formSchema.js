@@ -8,10 +8,7 @@ const FormSchema = yup.object().shape({
         mushrooms: yup.boolean(),
         onions: yup.boolean(),
         olives: yup.boolean()
-    }).test('toppingValidate', null, (obj) => {
-        if (obj.pepperoni === true) {
-            return true
-        }
-    })
+    }),
+    specialInstructions: yup.string()
 })
 export default FormSchema
